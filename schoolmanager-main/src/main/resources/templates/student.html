@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Quản Lý Sinh Viên</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        background: #f4f6f9;
+        font-family: "Segoe UI", sans-serif;
+      }
+      .main-card {
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+        border: none;
+      }
+      .table-action-btn {
+        margin: 0 3px;
+      }
+      /* Toast nằm góc trên bên phải đẹp hơn */
+      .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1055;
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary px-4 shadow-sm">
+      <span class="navbar-brand fw-bold">
+        <i class="fas fa-user-graduate"></i> Student Manager
+      </span>
+
+      <div class="ms-auto d-flex align-items-center text-white">
+        <span class="me-3" id="userInfo">
+          <i class="fas fa-spinner fa-spin"></i> Loading...
+        </span>
+        <button class="btn btn-outline-light btn-sm" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </button>
+      </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="container py-4">
+      <div class="row g-4">
+        <div class="col-md-4" id="adminForm">
+          <div class="card main-card h-100">
+            <div class="card-header bg-success text-white fw-bold">
+              <i class="fas fa-plus-circle"></i> Thêm Sinh Viên
+            </div>
+            <div class="card-body">
+              <form id="addStudentForm">
+                <div class="mb-3">
+                  <label class="form-label" for="addName">Họ tên</label>
+                  <input
+                    class="form-control"
+                    id="addName"
+                    placeholder="Nhập họ tên..."
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="addEmail">Email</label>
+                  <input
+                    class="form-control"
+                    id="addEmail"
+                    type="email"
+                    placeholder="example@email.com"
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="addGender">Giới tính</label>
+                  <select class="form-control" id="addGender">
+                    <option value="MALE">Nam</option>
+                    <option value="FEMALE">Nữ</option>
+                    <option value="OTHER">Khác</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-success w-100">
+                  <i class="fas fa-save"></i> Lưu sinh viên
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-8" id="tableColumn">
+          <div class="card main-card">
+            <div
+              class="card-header d-flex justify-content-between align-items-center bg-white py-3"
+            >
+              <span class="fw-bold text-primary fs-5">
+                <i class="fas fa-list"></i> Danh sách sinh viên
+              </span>
+              <div class="input-group w-50">
+                <input
+                  id="searchInput"
+                  class="form-control"
+                  placeholder="Tìm theo tên..."
+                />
+                <button class="btn btn-primary" onclick="searchStudent()">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="card-body p-0 table-responsive">
+              <table class="table table-hover text-center align-middle mb-0">
+                <thead class="table-light text-secondary">
+                  <tr>
+                    <th>ID</th>
+                    <th>Họ tên</th>
+                    <th>Email</th>
+                    <th>Giới tính</th>
+                    <th id="actionCol">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="editModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-warning">
+            <h5 class="modal-title fw-bold">
+              <i class="fas fa-edit"></i> Cập nhật thông tin
+            </h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="editId" />
+
+            <div class="mb-3">
+              <label for="editName" class="form-label">Họ tên</label>
+              <input class="form-control" id="editName" />
+            </div>
+            <div class="mb-3">
+              <label for="editEmail" class="form-label">Email</label>
+              <input class="form-control" id="editEmail" />
+            </div>
+            <div class="mb-3">
+              <label for="editGender" class="form-label">Giới tính</label>
+              <select class="form-control" id="editGender">
+                <option value="MALE">Nam</option>
+                <option value="FEMALE">Nữ</option>
+                <option value="OTHER">Khác</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">
+              Đóng
+            </button>
+            <button class="btn btn-primary" onclick="submitEdit()">
+              <i class="fas fa-check"></i> Lưu thay đổi
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      const API = "http://localhost:8080/api/students";
+
+      // Lấy thông tin từ LocalStorage
+      const username = localStorage.getItem("username");
+      const password = localStorage.getItem("password");
+      const role = localStorage.getItem("role");
+
+      let editModalInstance;
+
+      // 1. Kiểm tra đăng nhập
+      if (!username || !password) {
+        window.location.href = "login.html";
+      }
+
+      // 2. Setup giao diện theo Role
+      document.getElementById("userInfo").innerText = `Xin chào, ${username}`;
+
+      if (role !== "ROLE_ADMIN") {
+        const adminForm = document.getElementById("adminForm");
+        const actionCol = document.getElementById("actionCol");
+
+        if (adminForm) adminForm.remove();
+        if (actionCol) actionCol.remove();
+
+        document.getElementById("tableColumn").className = "col-md-12";
+      }
+
+      // 3. Hàm tạo Header Auth
+      function getHeaders() {
+        return {
+          Authorization: "Basic " + btoa(username + ":" + password),
+          "Content-Type": "application/json",
+        };
+      }
+
+      // 4. Khởi chạy trang
+      document.addEventListener("DOMContentLoaded", () => {
+        loadStudents();
+        editModalInstance = new bootstrap.Modal(
+          document.getElementById("editModal"),
+        );
+      });
+
+      // --- LOGIC MAP GIỚI TÍNH ---
+      // Hàm này giúp hiển thị tiếng Việt trên bảng nhưng vẫn giữ tiếng Anh ở code
+      function formatGender(genderCode) {
+        if (genderCode === "MALE")
+          return '<span class="badge bg-primary">Nam</span>';
+        if (genderCode === "FEMALE")
+          return '<span class="badge bg-danger">Nữ</span>';
+        return '<span class="badge bg-secondary">Khác</span>';
+      }
+
+      // --- CORE FUNCTIONS ---
+
+      function loadStudents(searchQuery = "") {
+        const url = searchQuery ? `${API}?name=${searchQuery}` : API;
+
+        fetch(url, { headers: getHeaders() })
+          .then((res) => {
+            if (res.status === 401) logout();
+            return res.json();
+          })
+          .then((data) => {
+            renderTable(data);
+          })
+          .catch((err) => console.error("Lỗi tải danh sách:", err));
+      }
+
+      function renderTable(data) {
+        const tbody = document.getElementById("tableBody");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-4">Không tìm thấy dữ liệu nào</td></tr>`;
+          return;
+        }
+
+        data.forEach((s) => {
+          let actionButtons = "";
+          if (role === "ROLE_ADMIN") {
+            actionButtons = `
+              <td>
+                <button class="btn btn-sm btn-outline-warning table-action-btn" onclick="openEdit(${s.id})">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger table-action-btn" onclick="del(${s.id})">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>`;
+          }
+
+          tbody.innerHTML += `
+            <tr>
+              <td>${s.id}</td>
+              <td class="fw-bold">${s.name}</td>
+              <td>${s.email}</td>
+              <td>${formatGender(s.gender)}</td> 
+              ${actionButtons}
+            </tr>`;
+        });
+      }
+
+      // THÊM MỚI
+      document
+        .getElementById("addStudentForm")
+        ?.addEventListener("submit", (e) => {
+          e.preventDefault();
+
+          const newStudent = {
+            name: document.getElementById("addName").value,
+            email: document.getElementById("addEmail").value,
+            gender: document.getElementById("addGender").value, // Giá trị: MALE/FEMALE/OTHER
+          };
+
+          fetch(API, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify(newStudent),
+          }).then((res) => {
+            if (res.ok) {
+              showToast("Thêm sinh viên thành công!", "success");
+              loadStudents();
+              e.target.reset();
+            } else {
+              showToast("Lỗi khi thêm! Vui lòng kiểm tra lại.", "error");
+            }
+          });
+        });
+
+      // MỞ MODAL SỬA
+      function openEdit(id) {
+        fetch(`${API}/${id}`, { headers: getHeaders() })
+          .then((res) => res.json())
+          .then((data) => {
+            document.getElementById("editId").value = data.id;
+            document.getElementById("editName").value = data.name;
+            document.getElementById("editEmail").value = data.email;
+            document.getElementById("editGender").value = data.gender; // Tự động chọn đúng option nhờ value khớp nhau (MALE/FEMALE)
+
+            editModalInstance.show();
+          })
+          .catch(() => showToast("Không tải được thông tin!", "error"));
+      }
+
+      // SUBMIT SỬA
+      function submitEdit() {
+        const id = document.getElementById("editId").value;
+        const updatedData = {
+          name: document.getElementById("editName").value,
+          email: document.getElementById("editEmail").value,
+          gender: document.getElementById("editGender").value,
+        };
+
+        fetch(`${API}/${id}`, {
+          method: "PUT",
+          headers: getHeaders(),
+          body: JSON.stringify(updatedData),
+        }).then((res) => {
+          if (res.ok) {
+            showToast("Cập nhật thành công!", "success");
+            editModalInstance.hide();
+            loadStudents();
+          } else {
+            showToast("Lỗi cập nhật!", "error");
+          }
+        });
+      }
+
+      // XÓA
+      function del(id) {
+        if (confirm("Bạn có chắc chắn muốn xóa sinh viên này?")) {
+          fetch(`${API}/${id}`, {
+            method: "DELETE",
+            headers: getHeaders(),
+          }).then((res) => {
+            if (res.ok) {
+              showToast("Đã xóa sinh viên!", "success");
+              loadStudents();
+            } else {
+              showToast("Không thể xóa sinh viên này!", "error");
+            }
+          });
+        }
+      }
+
+      // TÌM KIẾM
+      function searchStudent() {
+        const keyword = document.getElementById("searchInput").value;
+        loadStudents(keyword);
+      }
+
+      function logout() {
+        localStorage.clear();
+        window.location.href = "login.html";
+      }
+
+      // Hàm Toast đẹp hơn
+      function showToast(msg, type = "success") {
+        const container = document.getElementById("toastContainer");
+        const bgColor = type === "success" ? "bg-success" : "bg-danger";
+
+        const toastEl = document.createElement("div");
+        toastEl.className = `toast show align-items-center text-white ${bgColor} border-0 mb-2`;
+        toastEl.setAttribute("role", "alert");
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body"><i class="fas ${type === "success" ? "fa-check-circle" : "fa-exclamation-triangle"}"></i> ${msg}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>`;
+
+        container.appendChild(toastEl);
+
+        setTimeout(() => {
+          toastEl.remove();
+        }, 3000);
+      }
+    </script>
+  </body>
+</html>

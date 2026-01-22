@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Đăng nhập hệ thống</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      .card {
+        width: 400px;
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+
+      .card-header {
+        background: transparent;
+        border-bottom: 0;
+        padding-top: 20px;
+      }
+
+      .nav-tabs {
+        border-bottom: 2px solid #eee;
+        justify-content: center;
+      }
+
+      .nav-tabs .nav-link {
+        color: #888;
+        font-weight: 600;
+        border: none;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+        padding: 10px 20px;
+      }
+
+      .nav-tabs .nav-link:hover {
+        color: #667eea;
+      }
+
+      .nav-tabs .nav-link.active {
+        color: #667eea;
+        background: transparent;
+        border-bottom: 3px solid #667eea;
+      }
+
+      .form-control {
+        background-color: #f7f9fc;
+        border: 1px solid #e0e0e0;
+        padding: 10px 15px;
+      }
+
+      .form-control:focus {
+        box-shadow: none;
+        border-color: #667eea;
+        background-color: #fff;
+      }
+
+      .btn-primary-custom {
+        background: #667eea;
+        border: none;
+        padding: 10px;
+        font-weight: 600;
+        transition: 0.3s;
+      }
+
+      .btn-primary-custom:hover {
+        background: #5a6fd6;
+        transform: translateY(-1px);
+      }
+
+      .input-group-text {
+        background: #f7f9fc;
+        border: 1px solid #e0e0e0;
+        color: #888;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="card">
+      <div class="card-header">
+        <ul class="nav nav-tabs" id="authTab" role="tablist">
+          <li class="nav-item">
+            <button
+              class="nav-link active"
+              id="login-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#login"
+              type="button"
+            >
+              Đăng Nhập
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              class="nav-link"
+              id="register-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#register"
+              type="button"
+            >
+              Đăng Ký
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card-body p-4">
+        <div class="tab-content" id="authTabContent">
+          <div class="tab-pane fade show active" id="login">
+            <div id="loginMsg"></div>
+
+            <form id="loginForm">
+              <div class="mb-3">
+                <label class="form-label text-muted small fw-bold"
+                  >USERNAME</label
+                >
+                <div class="input-group">
+                  <span class="input-group-text"
+                    ><i class="fas fa-user"></i
+                  ></span>
+                  <input
+                    type="text"
+                    id="loginUsername"
+                    class="form-control"
+                    placeholder="Nhập tên đăng nhập"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label text-muted small fw-bold"
+                  >PASSWORD</label
+                >
+                <div class="input-group">
+                  <span class="input-group-text"
+                    ><i class="fas fa-lock"></i
+                  ></span>
+                  <input
+                    type="password"
+                    id="loginPassword"
+                    class="form-control"
+                    placeholder="Nhập mật khẩu"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                class="btn btn-primary btn-primary-custom w-100 text-white"
+                id="btnLogin"
+              >
+                Đăng nhập
+              </button>
+            </form>
+          </div>
+
+          <div class="tab-pane fade" id="register">
+            <div id="registerMsg"></div>
+
+            <form id="registerForm">
+              <div class="mb-3">
+                <label class="form-label text-muted small fw-bold"
+                  >USERNAME</label
+                >
+                <input
+                  type="text"
+                  id="regUsername"
+                  class="form-control"
+                  placeholder="Chọn tên đăng nhập"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label text-muted small fw-bold">EMAIL</label>
+                <input
+                  type="email"
+                  id="regEmail"
+                  class="form-control"
+                  placeholder="example@gmail.com"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label text-muted small fw-bold"
+                  >PASSWORD</label
+                >
+                <input
+                  type="password"
+                  id="regPassword"
+                  class="form-control"
+                  placeholder="Tạo mật khẩu"
+                  required
+                />
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label text-muted small fw-bold">ROLE</label>
+                <select id="regRole" class="form-select">
+                  <option value="ROLE_USER">Người dùng (User)</option>
+                  <option value="ROLE_ADMIN">Quản trị viên (Admin)</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                class="btn btn-success w-100 fw-bold"
+                id="btnRegister"
+              >
+                <i class="fas fa-user-plus"></i> Đăng ký ngay
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      const API = "http://localhost:8080/api/auth";
+
+      // --- 1. XỬ LÝ LOGIN ---
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault(); // Chặn reload trang để gửi bằng JS
+
+          const btn = document.getElementById("btnLogin");
+          const msgDiv = document.getElementById("loginMsg");
+          const usernameInput = document.getElementById("loginUsername").value;
+          const passwordInput = document.getElementById("loginPassword").value;
+
+          // UI Loading
+          setLoading(btn, true, "Đang xử lý...");
+          msgDiv.innerHTML = "";
+
+          // Gửi dữ liệu dạng JSON
+          fetch(`${API}/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json", // QUAN TRỌNG: Sửa lỗi log ở đây
+            },
+            body: JSON.stringify({
+              username: usernameInput,
+              password: passwordInput,
+            }),
+          })
+            .then((res) => {
+              if (!res.ok) throw new Error("Login failed");
+              return res.json();
+            })
+            .then((data) => {
+              msgDiv.innerHTML = `<div class="alert alert-success py-2"><i class="fas fa-check-circle"></i> Đăng nhập thành công!</div>`;
+
+              // Lưu thông tin
+              localStorage.setItem("username", usernameInput);
+              localStorage.setItem("password", passwordInput);
+              localStorage.setItem("role", data.role); // Backend cần trả về object { role: "..." }
+
+              setTimeout(() => {
+                window.location.href = "student.html";
+              }, 1000);
+            })
+            .catch((err) => {
+              console.error(err);
+              setLoading(btn, false, "Đăng nhập");
+              msgDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="fas fa-exclamation-circle"></i> Sai tên đăng nhập hoặc mật khẩu</div>`;
+            });
+        });
+
+      // --- 2. XỬ LÝ REGISTER ---
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const btn = document.getElementById("btnRegister");
+          const msgDiv = document.getElementById("registerMsg");
+
+          const data = {
+            username: document.getElementById("regUsername").value,
+            email: document.getElementById("regEmail").value,
+            password: document.getElementById("regPassword").value,
+            role: document.getElementById("regRole").value,
+          };
+
+          setLoading(btn, true, "Đang đăng ký...");
+          msgDiv.innerHTML = "";
+
+          fetch(`${API}/register`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json", // QUAN TRỌNG: Gửi JSON
+            },
+            body: JSON.stringify(data),
+          })
+            .then((res) => {
+              if (res.ok) {
+                return res.text();
+              } else {
+                throw new Error("Register failed");
+              }
+            })
+            .then((msg) => {
+              msgDiv.innerHTML = `<div class="alert alert-success py-2"><i class="fas fa-check-circle"></i> ${msg || "Đăng ký thành công!"}</div>`;
+              setLoading(btn, false, "Đăng ký ngay");
+              // Reset form
+              e.target.reset();
+
+              // Tự động chuyển qua tab login sau 1.5s
+              setTimeout(() => {
+                const loginTab = new bootstrap.Tab(
+                  document.querySelector("#login-tab"),
+                );
+                loginTab.show();
+                document.getElementById("loginMsg").innerHTML = ""; // Xóa thông báo cũ bên login nếu có
+              }, 1500);
+            })
+            .catch((err) => {
+              console.error(err);
+              setLoading(
+                btn,
+                false,
+                '<i class="fas fa-user-plus"></i> Đăng ký ngay',
+              );
+              msgDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="fas fa-times-circle"></i> Đăng ký thất bại (Username có thể đã tồn tại)</div>`;
+            });
+        });
+
+      // Hàm hiệu ứng nút bấm
+      function setLoading(btn, isLoading, text) {
+        if (isLoading) {
+          btn.disabled = true;
+          btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ${text}`;
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = text;
+        }
+      }
+    </script>
+  </body>
+</html>
