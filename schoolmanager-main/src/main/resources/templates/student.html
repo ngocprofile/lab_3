@@ -244,7 +244,7 @@
 
       // 3. Kiểm tra sơ bộ ở Frontend
       if (!username) {
-        window.location.href = "login.html";
+        window.location.href = "/login";
       }
 
       // 4. Setup giao diện theo Role
@@ -458,7 +458,7 @@
         fetch("/logout", { method: "POST", ...requestOptions }) // Endpoint mặc định của Spring Security
           .finally(() => {
             localStorage.clear(); // Xóa Role/Username ở client
-            window.location.href = "login.html"; // Quay về trang login
+            window.location.href = "/login?logout"; // Quay về trang login
           });
       }
 
