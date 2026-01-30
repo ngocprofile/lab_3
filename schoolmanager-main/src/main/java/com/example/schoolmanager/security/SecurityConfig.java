@@ -25,47 +25,38 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Cấu hình CORS (Thêm mới đoạn này để sửa lỗi Frontend)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // 2. Tắt CSRF (Thường tắt khi làm API cho Mobile/Web SPA)
                 .csrf(csrf -> csrf.disable())
-
-                // 3. Phân quyền API
                 .authorizeHttpRequests(auth -> auth
-                        // API Auth cho phép tất cả truy cập để đăng nhập/đăng ký
+                        // 1. Cho phép truy cập công khai các API xem dữ liệu (Tránh lỗi chặn ở Render)
+                        .requestMatchers(HttpMethod.GET, "/api/students/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // GET Students: User hoặc Admin đều xem được
-                        .requestMatchers(HttpMethod.GET, "/api/students/**").hasAnyRole("USER", "ADMIN")
-
-                        // POST Students: Chỉ Admin mới được thêm
+                        // 2. Các thao tác thay đổi dữ liệu vẫn cần quyền ADMIN
                         .requestMatchers(HttpMethod.POST, "/api/students/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/students/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/students/**").hasRole("ADMIN")
 
-                        // Các request còn lại bắt buộc phải đăng nhập
+                        // 3. Mọi request khác phải đăng nhập
                         .anyRequest().authenticated())
 
-                // 4. Sử dụng Basic Auth (Tạm thời để test, sau này sẽ thay bằng JWT Filter)
+                // 4. Giữ lại Basic Auth để bạn có thể đăng nhập bằng tài khoản admin/123456
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
     }
 
-    // --- CẤU HÌNH CHI TIẾT CORS ---
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Cho phép frontend chạy ở cổng 5500 gọi vào
-        configuration.setAllowedOrigins(List.of("http://127.0.0.1:5500"));
+        // QUAN TRỌNG: Cho phép cả domain Render và Localhost
+        configuration.setAllowedOrigins(List.of(
+                "http://127.0.0.1:5500",
+                "https://lab-3-6uc5.onrender.com"));
 
-        // Cho phép các method
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-        // Cho phép gửi kèm các header (như Authorization, Content-Type)
         configuration.setAllowedHeaders(List.of("*"));
-
-        // Cho phép gửi cookie/credentials (nếu cần)
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -79,8 +70,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 }
