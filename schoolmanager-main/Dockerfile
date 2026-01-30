@@ -1,37 +1,30 @@
 # --- Giai đoạn 1: Build dự án ---
-# Sử dụng image Maven chính thức với JDK 21 để biên dịch code
 FROM maven:3.9.6-eclipse-temurin-21 AS build
-
-# Thiết lập thư mục làm việc trong container
 WORKDIR /app
 
-# Copy file cấu hình Maven (pom.xml) trước để tận dụng cache của Docker
+# 1. Tối ưu Cache: Chỉ copy pom.xml và download thư viện trước
 COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-# Tải các thư viện (dependencies) về trước để tiết kiệm thời gian cho các lần build sau
-RUN mvn dependency:go-offline
-
-# Copy toàn bộ mã nguồn vào container
+# 2. Copy source và build
 COPY src ./src
-
-# Đóng gói dự án thành file .jar (bỏ qua Unit Test để không bị lỗi kết nối DB khi build)
 RUN mvn clean package -DskipTests
 
-# --- Giai đoạn 2: Runtime (Chạy ứng dụng) ---
-# Sử dụng JRE 21 bản Alpine siêu nhẹ để giảm dung lượng file cuối cùng
+# --- Giai đoạn 2: Runtime ---
 FROM eclipse-temurin:21-jre-alpine
-
 WORKDIR /app
 
-# Copy file .jar đã build từ giai đoạn 1 sang môi trường chạy này
-COPY --from=build /app/target/*.jar app.jar
-
-# Cài đặt gói dữ liệu múi giờ để hệ thống chạy đúng giờ Việt Nam
+# Cài đặt tzdata để đồng bộ múi giờ Việt Nam
 RUN apk add --no-cache tzdata
 ENV TZ=Asia/Ho_Chi_Minh
 
-# Thông báo cổng mà ứng dụng Spring Boot sẽ lắng nghe (mặc định 8080)
-EXPOSE 8080
+# Copy file jar từ stage build
+COPY --from=build /app/target/*.jar app.jar
 
-# Lệnh khởi chạy ứng dụng
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# QUAN TRỌNG: Render sử dụng port động hoặc mặc định là 10000. 
+# Ta ép Spring Boot nghe theo biến môi trường PORT của Render.
+ENV SERVER_PORT=10000
+EXPOSE 10000
+
+# Sử dụng mảng để truyền tham số, giúp Spring Boot nhận diện biến PORT từ Render
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-10000} -jar app.jar"]
