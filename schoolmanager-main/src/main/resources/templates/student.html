@@ -225,128 +225,123 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-      const API = "/api/students";
+      const API = "/api/students"; // URL API của bạn
 
-      // Lấy thông tin từ LocalStorage
+      // 1. Lấy thông tin User từ LocalStorage (Chỉ lấy Role và Username để hiển thị UI)
+      // TUYỆT ĐỐI KHÔNG LƯU PASSWORD Ở ĐÂY NỮA
       const username = localStorage.getItem("username");
-      const password = localStorage.getItem("password");
       const role = localStorage.getItem("role");
 
       let editModalInstance;
       let viewModalInstance;
 
-      // 1. Kiểm tra đăng nhập
-      if (!username || !password) {
+      // 2. Cấu hình Fetch mặc định: QUAN TRỌNG NHẤT
+      // credentials: "include" giúp gửi Cookie JSESSIONID đi kèm request
+      const requestOptions = {
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      };
+
+      // 3. Kiểm tra sơ bộ ở Frontend
+      if (!username) {
         window.location.href = "login.html";
       }
 
-      // 2. Setup giao diện theo Role
+      // 4. Setup giao diện theo Role
       document.getElementById("userInfo").innerText = `Xin chào, ${username}`;
 
+      // Nếu không phải ADMIN thì ẩn các chức năng thêm/sửa/xóa trên giao diện
       if (role !== "ROLE_ADMIN") {
         const adminForm = document.getElementById("adminForm");
         const actionCol = document.getElementById("actionCol");
 
         if (adminForm) adminForm.remove();
-        if (actionCol) actionCol.remove();
 
-        document.getElementById("tableColumn").className = "col-md-12";
+        // Mở rộng bảng ra full màn hình
+        const tableCol = document.getElementById("tableColumn");
+        if (tableCol) tableCol.className = "col-md-12";
       }
 
-      // 3. Hàm tạo Header Auth
-      function getHeaders() {
-        return {
-          Authorization: "Basic " + btoa(username + ":" + password),
-          "Content-Type": "application/json",
-        };
-      }
-
-      // 4. Khởi chạy trang
+      // 5. Khởi chạy khi trang tải xong
       document.addEventListener("DOMContentLoaded", () => {
-        loadStudents();
+        // Khởi tạo Modal của Bootstrap
         editModalInstance = new bootstrap.Modal(
           document.getElementById("editModal"),
         );
         viewModalInstance = new bootstrap.Modal(
           document.getElementById("viewModal"),
         );
+
+        // Tải dữ liệu
+        loadStudents();
       });
 
-      // --- LOGIC MAP GIỚI TÍNH ---
-      // Hàm này giúp hiển thị tiếng Việt trên bảng nhưng vẫn giữ tiếng Anh ở code
-      function formatGender(genderCode) {
-        if (genderCode === "MALE")
-          return '<span class="badge bg-primary">Nam</span>';
-        if (genderCode === "FEMALE")
-          return '<span class="badge bg-danger">Nữ</span>';
-        return '<span class="badge bg-secondary">Khác</span>';
-      }
+      // --- CÁC HÀM XỬ LÝ CHÍNH ---
 
-      // --- CORE FUNCTIONS ---
-
+      // Tải danh sách sinh viên
       function loadStudents(searchQuery = "") {
         const url = searchQuery ? `${API}?name=${searchQuery}` : API;
 
-        fetch(url, { headers: getHeaders() })
+        fetch(url, { method: "GET", ...requestOptions })
           .then((res) => {
-            if (res.status === 401) logout();
+            // Nếu Server trả về 401 (Chưa đăng nhập) hoặc 403 (Không có quyền)
+            if (res.status === 401 || res.status === 403) {
+              logout(); // Đăng xuất ngay
+              return null;
+            }
             return res.json();
           })
           .then((data) => {
-            renderTable(data);
+            if (data) renderTable(data);
           })
-          .catch((err) => console.error("Lỗi tải danh sách:", err));
+          .catch((err) => {
+            console.error("Lỗi tải danh sách:", err);
+            // showToast("Không thể kết nối đến Server", "error");
+          });
       }
 
+      // Hiển thị bảng dữ liệu
       function renderTable(data) {
         const tbody = document.getElementById("tableBody");
         tbody.innerHTML = "";
 
-        if (data.length === 0) {
+        if (!data || data.length === 0) {
           tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-4">Không tìm thấy dữ liệu nào</td></tr>`;
           return;
         }
 
         data.forEach((s) => {
           // Nút Xem (Ai cũng thấy)
-          let viewBtn = `
-              <button class="btn btn-sm btn-outline-info table-action-btn" onclick="openView(${s.id})">
+          let buttons = `
+              <button class="btn btn-sm btn-outline-info table-action-btn" onclick="openView(${s.id})" title="Xem chi tiết">
                   <i class="fas fa-eye"></i>
               </button>
           `;
 
-          // Nút Sửa/Xóa (Chỉ Admin thấy)
-          let adminBtns = "";
+          // Nút Sửa/Xóa (Chỉ ADMIN thấy)
           if (role === "ROLE_ADMIN") {
-            adminBtns = `
-                  <button class="btn btn-sm btn-outline-warning table-action-btn" onclick="openEdit(${s.id})">
-                      <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger table-action-btn" onclick="del(${s.id})">
-                      <i class="fas fa-trash"></i>
-                  </button>
-              `;
+            buttons += `
+                <button class="btn btn-sm btn-outline-warning table-action-btn" onclick="openEdit(${s.id})" title="Sửa">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger table-action-btn" onclick="del(${s.id})" title="Xóa">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
           }
-
-          // Nếu không phải Admin, logic cũ của bạn đang xóa cột actionCol.
-          // Để nút Xem hiện ra, bạn cần đảm bảo cột Action tồn tại (xem lưu ý bên dưới code).
-          // Ở đây tôi giả định cột Action vẫn hiển thị nút.
 
           tbody.innerHTML += `
               <tr>
                   <td>${s.id}</td>
-                  <td class="fw-bold">${s.name}</td>
+                  <td class="fw-bold text-primary">${s.name}</td>
                   <td>${s.email}</td>
                   <td>${formatGender(s.gender)}</td> 
-                  <td>
-                      ${viewBtn} 
-                      ${adminBtns}
-                  </td>
+                  <td>${buttons}</td>
               </tr>`;
         });
       }
 
-      // THÊM MỚI
+      // Xử lý Thêm mới (Submit Form)
       document
         .getElementById("addStudentForm")
         ?.addEventListener("submit", (e) => {
@@ -355,40 +350,41 @@
           const newStudent = {
             name: document.getElementById("addName").value,
             email: document.getElementById("addEmail").value,
-            gender: document.getElementById("addGender").value, // Giá trị: MALE/FEMALE/OTHER
+            gender: document.getElementById("addGender").value,
           };
 
           fetch(API, {
             method: "POST",
-            headers: getHeaders(),
+            headers: requestOptions.headers,
+            credentials: requestOptions.credentials, // Gửi Cookie
             body: JSON.stringify(newStudent),
           }).then((res) => {
             if (res.ok) {
               showToast("Thêm sinh viên thành công!", "success");
               loadStudents();
-              e.target.reset();
+              e.target.reset(); // Xóa trắng form
             } else {
-              showToast("Lỗi khi thêm! Vui lòng kiểm tra lại.", "error");
+              showToast("Lỗi! Bạn không có quyền hoặc dữ liệu sai.", "error");
             }
           });
         });
 
-      // MỞ MODAL SỬA
+      // Mở Modal Sửa (Lấy dữ liệu cũ đổ vào form)
       function openEdit(id) {
-        fetch(`${API}/${id}`, { headers: getHeaders() })
+        fetch(`${API}/${id}`, { method: "GET", ...requestOptions })
           .then((res) => res.json())
           .then((data) => {
             document.getElementById("editId").value = data.id;
             document.getElementById("editName").value = data.name;
             document.getElementById("editEmail").value = data.email;
-            document.getElementById("editGender").value = data.gender; // Tự động chọn đúng option nhờ value khớp nhau (MALE/FEMALE)
+            document.getElementById("editGender").value = data.gender;
 
             editModalInstance.show();
           })
           .catch(() => showToast("Không tải được thông tin!", "error"));
       }
 
-      // SUBMIT SỬA
+      // Submit cập nhật (PUT)
       function submitEdit() {
         const id = document.getElementById("editId").value;
         const updatedData = {
@@ -399,7 +395,8 @@
 
         fetch(`${API}/${id}`, {
           method: "PUT",
-          headers: getHeaders(),
+          headers: requestOptions.headers,
+          credentials: requestOptions.credentials,
           body: JSON.stringify(updatedData),
         }).then((res) => {
           if (res.ok) {
@@ -412,76 +409,93 @@
         });
       }
 
-      // XÓA
+      // Xóa sinh viên (DELETE)
       function del(id) {
-        if (confirm("Bạn có chắc chắn muốn xóa sinh viên này?")) {
+        if (
+          confirm(
+            "Bạn có chắc chắn muốn xóa sinh viên này? Hành động này không thể hoàn tác.",
+          )
+        ) {
           fetch(`${API}/${id}`, {
             method: "DELETE",
-            headers: getHeaders(),
+            ...requestOptions,
           }).then((res) => {
             if (res.ok) {
               showToast("Đã xóa sinh viên!", "success");
               loadStudents();
             } else {
-              showToast("Không thể xóa sinh viên này!", "error");
+              showToast("Lỗi! Bạn không có quyền xóa.", "error");
             }
           });
         }
       }
 
-      // TÌM KIẾM
+      // Tìm kiếm
       function searchStudent() {
         const keyword = document.getElementById("searchInput").value;
         loadStudents(keyword);
       }
 
-      function logout() {
-        localStorage.clear();
-        window.location.href = "login.html";
+      // Xem chi tiết
+      function openView(id) {
+        fetch(`${API}/${id}`, { method: "GET", ...requestOptions })
+          .then((res) => res.json())
+          .then((data) => {
+            document.getElementById("viewId").innerText = data.id;
+            document.getElementById("viewName").innerText = data.name;
+            document.getElementById("viewEmail").innerText = data.email;
+            document.getElementById("viewGender").innerHTML = formatGender(
+              data.gender,
+            );
+
+            viewModalInstance.show();
+          })
+          .catch(() => showToast("Lỗi tải chi tiết!", "error"));
       }
 
-      // Hàm Toast đẹp hơn
+      // Đăng xuất (Gọi API Logout của Server)
+      function logout() {
+        fetch("/logout", { method: "POST", ...requestOptions }) // Endpoint mặc định của Spring Security
+          .finally(() => {
+            localStorage.clear(); // Xóa Role/Username ở client
+            window.location.href = "login.html"; // Quay về trang login
+          });
+      }
+
+      // --- CÁC HÀM TIỆN ÍCH ---
+
+      // Format giới tính ra Badge đẹp
+      function formatGender(genderCode) {
+        if (genderCode === "MALE")
+          return '<span class="badge bg-primary">Nam</span>';
+        if (genderCode === "FEMALE")
+          return '<span class="badge bg-danger">Nữ</span>';
+        return '<span class="badge bg-secondary">Khác</span>';
+      }
+
+      // Hiển thị thông báo (Toast)
       function showToast(msg, type = "success") {
         const container = document.getElementById("toastContainer");
         const bgColor = type === "success" ? "bg-success" : "bg-danger";
+        const icon =
+          type === "success" ? "fa-check-circle" : "fa-exclamation-triangle";
 
         const toastEl = document.createElement("div");
         toastEl.className = `toast show align-items-center text-white ${bgColor} border-0 mb-2`;
-        toastEl.setAttribute("role", "alert");
         toastEl.innerHTML = `
             <div class="d-flex">
-                <div class="toast-body"><i class="fas ${type === "success" ? "fa-check-circle" : "fa-exclamation-triangle"}"></i> ${msg}</div>
+                <div class="toast-body">
+                    <i class="fas ${icon}"></i> ${msg}
+                </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>`;
 
         container.appendChild(toastEl);
 
+        // Tự động tắt sau 3 giây
         setTimeout(() => {
           toastEl.remove();
         }, 3000);
-      }
-
-      // HÀM XEM CHI TIẾT
-      function openView(id) {
-        fetch(`${API}/${id}`, { headers: getHeaders() })
-          .then((res) => res.json())
-          .then((data) => {
-            // Đổ dữ liệu vào Modal View
-            document.getElementById("viewId").innerText = data.id;
-            document.getElementById("viewName").innerText = data.name;
-            document.getElementById("viewEmail").innerText = data.email;
-
-            // Tái sử dụng hàm formatGender để hiển thị badge đẹp
-            document.getElementById("viewGender").innerHTML = formatGender(
-              data.gender,
-            );
-
-            // Hiển thị Modal
-            viewModalInstance.show();
-          })
-          .catch(() =>
-            showToast("Không tải được thông tin chi tiết!", "error"),
-          );
       }
     </script>
   </body>
